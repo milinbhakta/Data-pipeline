@@ -1,4 +1,4 @@
-# Data Pipeline Docker Compose Setup Documentation
+# Data Pipeline With Postgres and Logstash
 
 This Docker Compose configuration orchestrates a data pipeline involving PostgreSQL, RabbitMQ, Logstash, and Elasticsearch. The primary objective is to automate the process of publishing messages from the PostgreSQL 'user table,' consuming these messages via Logstash from RabbitMQ, and indexing the data into Elasticsearch for further analysis.
 
