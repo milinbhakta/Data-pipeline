@@ -1,0 +1,78 @@
+# Docker compose to run all the services and application both server and web
+version: "3.9"
+
+services:
+  rabbitmq:
+    build: ./rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    restart: always
+    volumes:
+      - rabbitmqdata:/var/lib/rabbitmq/
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres:
+    build: ./postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+        restart: true
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  elasticsearch:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.5.3
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+    volumes:
+      - elasticvolume:/usr/share/elasticsearch/data
+
+  logstash:
+    container_name: logstash
+    build:
+      context: ./logstash/
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - CONFIG_SUPPORT_ESCAPE=true
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+      - postgres
+    volumes:
+      - logstashvolume:/usr/share/logstash/data
+
+volumes:
+  pgdata:
+  elasticvolume:
+  logstashvolume:
+  rabbitmqdata:
+
