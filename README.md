@@ -35,13 +35,13 @@ The project aims to establish a seamless data pipeline for real-time data proces
 2. **Confirm Message Publication:**
    - Verify that a corresponding message has been published to RabbitMQ upon data insertion.
 3. **Data Indexing Check:**
-   - Access [http://localhost:9200/users/_search/?q=random](http://localhost:9200/users/_search/?q=random) to check for indexed data in Elasticsearch.
+   - Access [http://localhost:9200/users/_search/?q=username](http://localhost:9200/users/_search/?q=username) to check for indexed data in Elasticsearch.
      - The URL queries Elasticsearch for indexed data under the 'users' index based on the 'random' query.
 
 ### Example Usage:
 
 1. Insert data into the 'usertable' using PostgreSQL.
-2. Visit [http://localhost:9200/users/_search/?q=random](http://localhost:9200/users/_search/?q=random) after inserting data to check for indexed results.
+2. Visit [http://localhost:9200/users/_search/?q=username](http://localhost:9200/users/_search/?q=username) after inserting data to check for indexed results.
 
 ## Service Configuration and Customization
 
