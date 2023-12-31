@@ -53,6 +53,11 @@ services:
         restart: true
     volumes:
       - elasticvolume:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://elasticsearch:9200"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   logstash:
     container_name: logstash
@@ -69,6 +74,11 @@ services:
       - postgres
     volumes:
       - logstashvolume:/usr/share/logstash/data
+    healthcheck:
+      test: ["CMD-SHELL", "ps aux | grep 'logstash' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   pgdata:
