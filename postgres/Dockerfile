@@ -17,11 +17,18 @@ RUN git clone https://github.com/omniti-labs/pg_amqp.git .
 # Set PG_CONFIG environment variable
 ENV PG_CONFIG /usr/bin/pg_config
 
+# Define a build argument for the path to the amqp.h file
 ARG AMQP_H=src/librabbitmq/amqp.h
 
-RUN head -n 2 ${AMQP_H} > ${AMQP_H}.temp \
+# Run a series of commands to modify the amqp.h file
+RUN \
+    # Copy the first two lines of amqp.h to a temporary file
+    head -n 2 ${AMQP_H} > ${AMQP_H}.temp \
+    # Append an include directive to the temporary file
     && echo "#include <sys/types.h>" >>  ${AMQP_H}.temp \
+    # Append the rest of amqp.h, excluding the first three lines, to the temporary file
     && cat ${AMQP_H} | sed -e '1,3d' >> ${AMQP_H}.temp \
+    # Replace the original amqp.h file with the modified temporary file
     && mv ${AMQP_H}.temp ${AMQP_H}
 
 # Build and install
