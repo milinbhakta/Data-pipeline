@@ -1,93 +1,88 @@
-# Docker Compose file to orchestrate all services and applications
+# Docker compose to run all the services and application both server and web
 version: "3.9"
 
 services:
-  # RabbitMQ service configuration
   rabbitmq:
-    build: ./rabbitmq  # Build context for RabbitMQ
+    build: ./rabbitmq
     ports:
-      - "5672:5672"  # Expose RabbitMQ's default port
-      - "15672:15672"  # Expose RabbitMQ's management interface port
-    restart: always  # Always restart the service if it stops
+      - "5672:5672"
+      - "15672:15672"
+    restart: always
     volumes:
-      - rabbitmqdata:/var/lib/rabbitmq/  # Persist RabbitMQ data
-    healthcheck:  # Health check using rabbitmqctl status command
+      - rabbitmqdata:/var/lib/rabbitmq/
+    healthcheck:
       test: ["CMD", "rabbitmqctl", "status"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  # PostgreSQL service configuration
   postgres:
-    build: ./postgres  # Build context for PostgreSQL
+    build: ./postgres
     ports:
-      - "5432:5432"  # Expose PostgreSQL's default port
-    environment:  # Environment variables for PostgreSQL
+      - "5432:5432"
+    environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-    depends_on:  # Depend on RabbitMQ service and wait until it's healthy
+    depends_on:
       rabbitmq:
         condition: service_healthy
-    restart: always  # Always restart the service if it stops
+        restart: true
     volumes:
-      - pgdata:/var/lib/postgresql/data  # Persist PostgreSQL data
-    healthcheck:  # Health check using pg_isready command
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  # Elasticsearch service configuration
   elasticsearch:
-    container_name: elasticsearch  # Custom container name
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.5.3  # Elasticsearch image
-    environment:  # Environment variables for Elasticsearch
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.5.3
+    environment:
       - discovery.type=single-node
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       - bootstrap.memory_lock=true
       - xpack.security.enabled=false
     ports:
-      - "9200:9200"  # Expose Elasticsearch's HTTP port
-      - "9300:9300"  # Expose Elasticsearch's transport port
-    depends_on:  # Depend on PostgreSQL service and wait until it's healthy
+      - "9200:9200"
+      - "9300:9300"
+    depends_on:
       postgres:
         condition: service_healthy
-    restart: always  # Always restart the service if it stops
+        restart: true
     volumes:
-      - elasticvolume:/usr/share/elasticsearch/data  # Persist Elasticsearch data
-    healthcheck:  # Health check using curl command
+      - elasticvolume:/usr/share/elasticsearch/data
+    healthcheck:
       test: ["CMD", "curl", "-f", "http://elasticsearch:9200"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  # Logstash service configuration
   logstash:
-    container_name: logstash  # Custom container name
-    build:  # Build context and Dockerfile for Logstash
+    container_name: logstash
+    build:
       context: ./logstash/
       dockerfile: Dockerfile
     ports:
-      - "5000:5000"  # Expose Logstash's default port
-    environment:  # Environment variables for Logstash
+      - "5000:5000"
+    environment:
       - CONFIG_SUPPORT_ESCAPE=true
       - ELASTICSEARCH_URL=http://elasticsearch:9200
-    depends_on:  # Depend on Elasticsearch and PostgreSQL services
+    depends_on:
       - elasticsearch
       - postgres
-    restart: always  # Always restart the service if it stops
     volumes:
-      - logstashvolume:/usr/share/logstash/data  # Persist Logstash data
-    healthcheck:  # Health check using ps command
+      - logstashvolume:/usr/share/logstash/data
+    healthcheck:
       test: ["CMD-SHELL", "ps aux | grep 'logstash' || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-# Define volumes for data persistence
 volumes:
-  pgdata:  # Volume for PostgreSQL data
-  elasticvolume:  # Volume for Elasticsearch data
-  logstashvolume:  # Volume for Logstash data
-  rabbitmqdata:  # Volume for RabbitMQ data
+  pgdata:
+  elasticvolume:
+  logstashvolume:
+  rabbitmqdata:
+
